@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "FW3BnbCmMOkqlNM0aogMmSE+5dtoNkDrVyCP5e4BXP4=",
+  "Source": "SocialNetwork.Api",
+  "BasePath": "_content/SocialNetwork.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
