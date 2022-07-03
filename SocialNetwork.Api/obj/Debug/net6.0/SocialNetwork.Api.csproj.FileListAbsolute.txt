@@ -1,7 +1,0 @@
-D:\Projects\SocialNetwork\SocialNetwork.Api\obj\Debug\net6.0\SocialNetwork.Api.csproj.AssemblyReference.cache
-D:\Projects\SocialNetwork\SocialNetwork.Api\obj\Debug\net6.0\SocialNetwork.Api.GeneratedMSBuildEditorConfig.editorconfig
-D:\Projects\SocialNetwork\SocialNetwork.Api\obj\Debug\net6.0\SocialNetwork.Api.AssemblyInfoInputs.cache
-D:\Projects\SocialNetwork\SocialNetwork.Api\obj\Debug\net6.0\SocialNetwork.Api.AssemblyInfo.cs
-D:\Projects\SocialNetwork\SocialNetwork.Api\obj\Debug\net6.0\SocialNetwork.Api.csproj.CoreCompileInputs.cache
-D:\Projects\SocialNetwork\SocialNetwork.Api\obj\Debug\net6.0\SocialNetwork.Api.MvcApplicationPartsAssemblyInfo.cs
-D:\Projects\SocialNetwork\SocialNetwork.Api\obj\Debug\net6.0\SocialNetwork.Api.MvcApplicationPartsAssemblyInfo.cache
