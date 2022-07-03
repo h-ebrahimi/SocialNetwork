@@ -1,4 +1,6 @@
-﻿namespace SocialNetwork.Api.Actors
+﻿using Akka.Actor;
+
+namespace SocialNetwork.Api.Actors
 {
     public class UserActor : ReceiveActor
     {
