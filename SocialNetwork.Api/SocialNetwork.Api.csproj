@@ -7,14 +7,49 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="bin\**" />
-	  <Compile Remove="obj\**" />
-	  <Content Remove="bin\**" />
-	  <Content Remove="obj\**" />
-	  <EmbeddedResource Remove="bin\**" />
-	  <EmbeddedResource Remove="obj\**" />
-	  <None Remove="bin\**" />
-	  <None Remove="obj\**" />
+	  <Compile Include="obj\Debug\net6.0\.NETCoreApp,Version=v6.0.AssemblyAttributes.cs" />
+	  <Compile Include="obj\Debug\net6.0\SocialNetwork.Api.AssemblyInfo.cs" />
+	  <Compile Include="obj\Debug\net6.0\SocialNetwork.Api.GlobalUsings.g.cs" />
+	  <Compile Include="obj\Debug\net6.0\SocialNetwork.Api.MvcApplicationPartsAssemblyInfo.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="bin\Debug\net6.0\appsettings.Development.json" />
+	  <Content Include="bin\Debug\net6.0\appsettings.json" />
+	  <Content Include="bin\Debug\net6.0\SocialNetwork.Api.deps.json" />
+	  <Content Include="bin\Debug\net6.0\SocialNetwork.Api.runtimeconfig.json" />
+	  <Content Include="obj\Debug\net6.0\SocialNetwork.Api.csproj.FileListAbsolute.txt" />
+	  <Content Include="obj\Debug\net6.0\staticwebassets.build.json" />
+	  <Content Include="obj\project.assets.json" />
+	  <Content Include="obj\SocialNetwork.Api.csproj.nuget.dgspec.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="bin\Debug\net6.0\Microsoft.OpenApi.dll" />
+	  <None Include="bin\Debug\net6.0\SocialNetwork.Api.dll" />
+	  <None Include="bin\Debug\net6.0\SocialNetwork.Api.exe" />
+	  <None Include="bin\Debug\net6.0\SocialNetwork.Api.pdb" />
+	  <None Include="bin\Debug\net6.0\Swashbuckle.AspNetCore.Swagger.dll" />
+	  <None Include="bin\Debug\net6.0\Swashbuckle.AspNetCore.SwaggerGen.dll" />
+	  <None Include="bin\Debug\net6.0\Swashbuckle.AspNetCore.SwaggerUI.dll" />
+	  <None Include="obj\Debug\net6.0\apphost.exe" />
+	  <None Include="obj\Debug\net6.0\refint\SocialNetwork.Api.dll" />
+	  <None Include="obj\Debug\net6.0\ref\SocialNetwork.Api.dll" />
+	  <None Include="obj\Debug\net6.0\SocialNetwork.Api.AssemblyInfoInputs.cache" />
+	  <None Include="obj\Debug\net6.0\SocialNetwork.Api.assets.cache" />
+	  <None Include="obj\Debug\net6.0\SocialNetwork.Api.csproj.AssemblyReference.cache" />
+	  <None Include="obj\Debug\net6.0\SocialNetwork.Api.csproj.BuildWithSkipAnalyzers" />
+	  <None Include="obj\Debug\net6.0\SocialNetwork.Api.csproj.CopyComplete" />
+	  <None Include="obj\Debug\net6.0\SocialNetwork.Api.csproj.CoreCompileInputs.cache" />
+	  <None Include="obj\Debug\net6.0\SocialNetwork.Api.dll" />
+	  <None Include="obj\Debug\net6.0\SocialNetwork.Api.GeneratedMSBuildEditorConfig.editorconfig" />
+	  <None Include="obj\Debug\net6.0\SocialNetwork.Api.genruntimeconfig.cache" />
+	  <None Include="obj\Debug\net6.0\SocialNetwork.Api.MvcApplicationPartsAssemblyInfo.cache" />
+	  <None Include="obj\Debug\net6.0\SocialNetwork.Api.pdb" />
+	  <None Include="obj\project.nuget.cache" />
+	  <None Include="obj\SocialNetwork.Api.csproj.nuget.g.props" />
+	  <None Include="obj\SocialNetwork.Api.csproj.nuget.g.targets" />
+	  <None Include="obj\staticwebassets.pack.sentinel" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -34,6 +69,10 @@
 		<PackageReference Include="Petabridge.Cmd.Host" Version="1.1.0" />
 		<PackageReference Include="Petabridge.Cmd.Cluster" Version="1.1.0" />
 		<PackageReference Include="Petabridge.Cmd.Remote" Version="1.1.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="obj\Debug\net6.0\staticwebassets\" />
 	</ItemGroup>
 
 </Project>
