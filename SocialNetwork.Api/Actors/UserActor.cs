@@ -1,4 +1,6 @@
 ﻿using Akka.Actor;
+using Akka.Cluster;
+using Akka.Cluster.Sharding;
 using SocialNetwork.Api.Messages;
 using SocialNetwork.Api.Models;
 using System;
@@ -25,7 +27,7 @@ namespace SocialNetwork.Api.Actors
                         }
                     case UserConversationMessage userConversation:
                         {
-                            Console.WriteLine($"{userConversation.UserId} received a message from {userConversation.AnotherUserId} at {userConversation.CreatedAt}");
+                            Console.WriteLine($"{userConversation.UserId} <==> {userConversation.AnotherUserId} at {userConversation.CreatedAt}");
 
                             if (!_conversations.Any(c => c.ConversationId.Equals(userConversation.ConversationId, StringComparison.OrdinalIgnoreCase)))
                                 _conversations.Add(new Conversation
@@ -58,6 +60,10 @@ namespace SocialNetwork.Api.Actors
             Receive<IUserId>(message =>
             {
                 _shardRegion.Tell(message, Self);
+            });
+
+            Receive<object>(message => {
+                var cluster = Cluster.Get(Context.System);
             });
         }
 

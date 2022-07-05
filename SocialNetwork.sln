@@ -5,6 +5,8 @@ VisualStudioVersion = 17.2.32602.215
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocialNetwork.Api", "SocialNetwork.Api\SocialNetwork.Api.csproj", "{C11696F7-8DB2-4CB4-84D4-52780A29CD45}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocialNetwork.Test", "SocialNetwork.Test\SocialNetwork.Test.csproj", "{2DBC2A7A-883F-497F-84CD-FB9DF8B650F7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{C11696F7-8DB2-4CB4-84D4-52780A29CD45}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C11696F7-8DB2-4CB4-84D4-52780A29CD45}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C11696F7-8DB2-4CB4-84D4-52780A29CD45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DBC2A7A-883F-497F-84CD-FB9DF8B650F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DBC2A7A-883F-497F-84CD-FB9DF8B650F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DBC2A7A-883F-497F-84CD-FB9DF8B650F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DBC2A7A-883F-497F-84CD-FB9DF8B650F7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
