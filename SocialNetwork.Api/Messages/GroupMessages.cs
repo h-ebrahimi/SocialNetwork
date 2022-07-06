@@ -38,7 +38,7 @@ namespace SocialNetwork.Api.Messages
         public override object EntityMessage(object message)
         {
             var groupMessage = message as IGroupMessage;
-            return groupMessage.Message;
+            return groupMessage;
         }
     }
 }

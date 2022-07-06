@@ -10,6 +10,7 @@
         public BaseAkkaOptions CreationUser { get; set; }
         public BaseAkkaOptions Conversation { get; set; }
         public BaseAkkaOptions Group { get; set; }
+        public BaseAkkaOptions Channel { get; set; }
     }
 
     public class BaseAkkaOptions

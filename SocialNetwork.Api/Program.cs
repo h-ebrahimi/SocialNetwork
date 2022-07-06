@@ -15,6 +15,7 @@ using SocialNetwork.Api.Actors;
 using SocialNetwork.Api.Messages;
 using SocialNetwork.Api.Models;
 using SocialNetwork.Api.Options;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,9 +37,9 @@ builder.Services.AddAkka(_options.ActorSystemName, builder =>
     {
         Roles = new[] { "backend" },
         SeedNodes = new[] { new Address($"akka.{_options.ProtocolType}",
-                                                _options.ActorSystemName, 
-                                                _options.Hostname, 
-                                                _options.Port) 
+                                                _options.ActorSystemName,
+                                                _options.Hostname,
+                                                _options.Port)
         }
     })
     .AddPetabridgeCmd(cmd =>
@@ -51,7 +52,7 @@ builder.Services.AddAkka(_options.ActorSystemName, builder =>
                 p => UserActor.CreateProps(),
                 new MesssageExtractor(_options.CreationUser.MaxNumberOfShards),
                 new ShardOptions())
-    .WithShardRegion<ConversationMessage>(_options.Conversation.ShardTypename,
+    .WithShardRegion<IConversationMessage>(_options.Conversation.ShardTypename,
                 p => ConversationActor.CreateProps(),
                 new ConversationMessageExtractor(_options.Conversation.MaxNumberOfShards),
                 new ShardOptions())
@@ -59,16 +60,23 @@ builder.Services.AddAkka(_options.ActorSystemName, builder =>
                 p => GroupActor.CreateProps(),
                 new GroupMessageExtractor(_options.Group.MaxNumberOfShards),
                 new ShardOptions())
+    .WithShardRegion<IChannelMessage>(_options.Channel.ShardTypename,
+                p => ChannelActor.CreateProps(),
+                new ChannelMessageExtractor(_options.Channel.MaxNumberOfShards),
+                new ShardOptions())
     .StartActors((actorSystem, actorRegistry) =>
     {
         var userShardRegion = actorRegistry.Get<IUserId>();
         actorRegistry.Register<UserActorProxy>(actorSystem.ActorOf(Props.Create(() => new UserActorProxy(userShardRegion))));
 
-        var conversationSharedRegion = actorRegistry.Get<ConversationMessage>();
+        var conversationSharedRegion = actorRegistry.Get<IConversationMessage>();
         actorRegistry.Register<ConversationActorProxy>(actorSystem.ActorOf(Props.Create(() => new ConversationActorProxy(conversationSharedRegion, userShardRegion))));
 
         var groupShardRegion = actorRegistry.Get<IGroupMessage>();
         actorRegistry.Register<GroupActorProxy>(actorSystem.ActorOf(Props.Create(() => new GroupActorProxy(groupShardRegion, userShardRegion))));
+
+        var channelShardRegion = actorRegistry.Get<IChannelMessage>();
+        actorRegistry.Register<ChannelActorProxy>(actorSystem.ActorOf(Props.Create(() => new ChannelActorProxy(channelShardRegion, userShardRegion))));
     });
 });
 // Resolve Akka Configuration
@@ -92,20 +100,32 @@ app.MapPost("/CreateUser", (CreateUser createUser, IActorRegistry reg) =>
 }).WithName("CreateUser");
 
 // ------------------------------------------------------------Conversation
-app.MapPost("/Conversation", (ConversationMessage conversation, IActorRegistry reg) =>
+app.MapPost("/Conversation", (SendConversationMessage conversation, IActorRegistry reg) =>
 {
     var actor = reg.Get<ConversationActorProxy>();
-    actor.Tell(conversation);
+    actor.Tell(new ConversationMessage
+    {
+        Message = conversation.Message,
+        UserId1 = conversation.UserId1,
+        UserId2 = conversation.UserId2
+    });
 
     return Task.CompletedTask;
-}).WithName("Conversation");
+}).WithName("Sent Message To Conversation");
+app.MapGet("/Conversation/{conversationId}", async ([FromQuery] string conversationId, IActorRegistry reg) =>
+{
+    var actor = reg.Get<ConversationActorProxy>();
+    var messages = await actor.Ask<List<ConversationMessage>>(new GetConversationMessage { ConversationId = conversationId });
+
+    return messages;
+}).WithName("Get Messages To Conversation");
 // ------------------------------------------------------------Conversation
 // ------------------------------------------------------------Group
 app.MapPost("/Group/Create", (CreateGroup createGroup, IActorRegistry reg) =>
 {
     var actor = reg.Get<GroupActorProxy>();
-    actor.Tell(new CreateGroupMessage { GroupId = createGroup.Name, Sender= createGroup.Sender , Message = string.Empty});
-    
+    actor.Tell(new CreateGroupMessage { GroupId = createGroup.Name, Sender = createGroup.Sender, Message = string.Empty });
+
     return Task.CompletedTask;
 }).WithName("CreateGroup");
 
@@ -113,7 +133,7 @@ app.MapPost("/Group/{groupName}/Join", ([FromQuery] string groupName, JoinGroup 
 {
     var actor = reg.Get<GroupActorProxy>();
     actor.Tell(new JoinGroupMessage { GroupId = groupName, Sender = joinGroup.Sender, Message = string.Empty });
-    
+
     return Task.CompletedTask;
 }).WithName("JoinGroup");
 
@@ -124,14 +144,18 @@ app.MapPost("/Group/{groupName}", ([FromQuery] string groupName, ConversationMes
 }).WithName("SentToGroup");
 // ------------------------------------------------------------Group
 // ------------------------------------------------------------Channel
-app.MapPost("/Channel/Create", (ConversationMessage conversation, IActorRegistry reg) =>
+app.MapPost("/Channel/Create", (CreateChannel createChannel, IActorRegistry reg) =>
 {
+    var actor = reg.Get<ChannelActorProxy>();
+    actor.Tell(new CreateChannelMessage { ChannelId = createChannel.Name, Sender = createChannel.Sender, Message = string.Empty });
 
     return Task.CompletedTask;
 }).WithName("CreateChannel");
 
-app.MapPost("/Channel/{channelName}/Join", ([FromQuery] string channelName, ConversationMessage conversation, IActorRegistry reg) =>
+app.MapPost("/Channel/{channelName}/Join", ([FromQuery] string channelName, JoinChannel joinChannel, IActorRegistry reg) =>
 {
+    var actor = reg.Get<ChannelActorProxy>();
+    actor.Tell(new JoinChannelMessage { ChannelId = channelName, Sender = joinChannel.Sender, Message = string.Empty });
 
     return Task.CompletedTask;
 }).WithName("JoinChannel");

@@ -1,5 +1,4 @@
 ﻿using Akka.Actor;
-using Akka.Persistence;
 using SocialNetwork.Api.Messages;
 using System;
 using System.Collections.Generic;
@@ -17,11 +16,27 @@ namespace SocialNetwork.Api.Actors
         public ConversationActor()
         {
             _conversations = new List<ConversationMessage>();
-            Receive<ConversationMessage>(message =>
+            Receive<IConversationMessage>(message =>
             {
-                Console.WriteLine($"{Sender.Path} sent {message.ConversationId}");
-                _conversations.Add(message);                
-            });            
+                switch (message)
+                {
+                    case ConversationMessage conversationMessage:
+                        {
+                            Console.WriteLine($"{Sender.Path} sent {message.ConversationId}");
+                            _conversations.Add(conversationMessage);
+                            break;
+                        }
+                    case GetConversationMessage getConversation:
+                        {
+                            Sender.Tell(_conversations);
+                            Console.WriteLine($"Send conversation to {Sender.Path} ");
+                            break;
+                        }
+                    default:
+                        break;
+                }
+
+            });
         }
     }
 
@@ -35,24 +50,39 @@ namespace SocialNetwork.Api.Actors
             _selfShardRegion = selfShardRegion;
             _userShardRegion = userShardRegion;
 
-            Receive<ConversationMessage>(message =>
+            Receive<IConversationMessage>(message =>
             {
-                _selfShardRegion.Tell(message, Self);
-                // Send to sender and receiver
-                _userShardRegion.Tell(new UserConversationMessage
+                switch (message)
                 {
-                    AnotherUserId = message.UserId2,
-                    ConversationId = message.ConversationId,
-                    CreatedAt = message.CreatedAt,
-                    UserId = message.UserId1
-                }, Self);
-                _userShardRegion.Tell(new UserConversationMessage
-                {
-                    AnotherUserId = message.UserId1,
-                    ConversationId = message.ConversationId,
-                    CreatedAt = message.CreatedAt,
-                    UserId = message.UserId2
-                }, Self);
+                    case ConversationMessage conversationMessage:
+                        {
+                            _selfShardRegion.Tell(message, Self);
+                            // Send to sender and receiver
+                            _userShardRegion.Tell(new UserConversationMessage
+                            {
+                                AnotherUserId = conversationMessage.UserId2,
+                                ConversationId = conversationMessage.ConversationId,
+                                CreatedAt = conversationMessage.CreatedAt,
+                                UserId = conversationMessage.UserId1
+                            }, Self);
+                            _userShardRegion.Tell(new UserConversationMessage
+                            {
+                                AnotherUserId = conversationMessage.UserId1,
+                                ConversationId = conversationMessage.ConversationId,
+                                CreatedAt = conversationMessage.CreatedAt,
+                                UserId = conversationMessage.UserId2
+                            }, Self);
+                            break;
+                        }
+                    case GetConversationMessage getConversation:
+                        {
+                            _selfShardRegion.Forward(message);
+                            break;
+                        }
+                    default:
+                        break;
+                }
+
             });
         }
     }
