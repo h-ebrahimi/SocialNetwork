@@ -1,4 +1,5 @@
 ﻿using Akka.Cluster.Sharding;
+using System.Collections.Generic;
 
 namespace SocialNetwork.Api.Messages
 {
@@ -10,14 +11,31 @@ namespace SocialNetwork.Api.Messages
         public string Receiver { get; set; }
     }
 
-    public class InComingMessage : BaseMessage
+    public class UserStatusRequestMessage : IUserId
     {
-
+        public string UserId { get; set; }
     }
 
-    public class OutGoingMessage : BaseMessage
+    public class GroupMemberMessage : IUserId
     {
+        public string UserId { get; set; }
+        public string GroupId { get; set; }
+    }
 
+    public class UserGroupMessage : IUserId
+    {
+        public string GroupId { get; set; }
+        public string UserId { get; set; }
+        public string Message { get; set; }
+    }
+
+    public class UserStatusResponseMessage : IUserId
+    {
+        public string UserId { get; set; }
+        public int Point { get; set; }
+        public List<string> Conversations { get; set; }
+        public List<string> Groups { get; set; }
+        public List<string> Channels { get; set; }        
     }
 
     public class MesssageExtractor : HashCodeMessageExtractor

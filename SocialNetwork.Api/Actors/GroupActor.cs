@@ -1,4 +1,5 @@
 ﻿using Akka.Actor;
+using Akka.Cluster.Tools.PublishSubscribe;
 using SocialNetwork.Api.Messages;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,8 @@ namespace SocialNetwork.Api.Actors
     {
         public List<string> _groupMessage;
         public List<string> _members;
+        public string _owner;
+        IActorRef _mediator;
 
         public static Props CreateProps()
         {
@@ -25,11 +28,11 @@ namespace SocialNetwork.Api.Actors
                         {
                             if (_groupMessage is null)
                             {
+                                _mediator = DistributedPubSub.Get(Context.System).Mediator;
+                                
                                 _groupMessage = new List<string>();
-                                _members = new List<string>
-                                {
-                                    createGroup.Sender
-                                };
+                                _members = new List<string> { createGroup.Sender };
+                                _owner = createGroup.Sender;
 
                                 Console.WriteLine($"{Sender.Path} sent CreateGroupMessage {message.GroupId} at {DateTime.Now}");
                             }
@@ -39,6 +42,12 @@ namespace SocialNetwork.Api.Actors
                         }
                     case JoinGroupMessage joinGroup:
                         {
+                            if (_members is null)
+                            {
+                                Console.WriteLine($"Group {joinGroup.GroupId} not exist.");
+                                return;
+                            }
+
                             if (!_members.Contains(joinGroup.Sender))
                             {
                                 _members.Add(joinGroup.Sender);
@@ -46,6 +55,28 @@ namespace SocialNetwork.Api.Actors
                             }
                             else
                                 Console.WriteLine($"{Sender.Path} Group {joinGroup.GroupId} already has {joinGroup.Sender}");
+                            break;
+                        }
+                    case GroupMessage groupMessage:
+                        {
+                            if (_members is null)
+                            {
+                                Console.WriteLine($"Group {groupMessage.GroupId} not exist.");
+                                return;
+                            }
+
+                            if (!_members.Contains(groupMessage.Sender))
+                            {
+                                Console.WriteLine($"{groupMessage.Sender} no member og group {groupMessage.GroupId}");
+                                return;
+                            }
+
+                            _mediator.Tell(new Publish(groupMessage.GroupId, new UserGroupMessage
+                            {
+                                GroupId = groupMessage.GroupId,
+                                UserId = groupMessage.Sender,
+                                Message = groupMessage.Message
+                            }));
                             break;
                         }
                     default:
@@ -72,7 +103,19 @@ namespace SocialNetwork.Api.Actors
 
             Receive<IGroupMessage>(message =>
             {
-                _groupShardRegion.Tell(message);
+                switch (message)
+                {
+                    case CreateGroupMessage createGroup:
+                    case JoinGroupMessage joinGroup:
+                        {
+                            _groupShardRegion.Forward(message);
+                            _UserShardRegion.Forward(new GroupMemberMessage { GroupId = message.GroupId, UserId = message.Sender });
+                            break;
+                        }
+                    default:
+                        _groupShardRegion.Tell(message);
+                        break;
+                }
             });
         }
     }

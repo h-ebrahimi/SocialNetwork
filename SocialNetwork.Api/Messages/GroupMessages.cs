@@ -23,6 +23,13 @@ namespace SocialNetwork.Api.Messages
         public string Message { get; set; }
     }
 
+    public class GroupMessage : IGroupMessage
+    {
+        public string GroupId { get; set; }
+        public string Sender { get; set; }
+        public string Message { get; set; }
+    }
+
     public class GroupMessageExtractor : HashCodeMessageExtractor
     {
         public GroupMessageExtractor(int maxNumberOfShards) : base(maxNumberOfShards)

@@ -1,6 +1,5 @@
 ﻿using Akka.Actor;
-using Akka.Cluster;
-using Akka.Cluster.Sharding;
+using Akka.Cluster.Tools.PublishSubscribe;
 using SocialNetwork.Api.Messages;
 using SocialNetwork.Api.Models;
 using System;
@@ -12,9 +11,17 @@ namespace SocialNetwork.Api.Actors
     public class UserActor : ReceiveActor
     {
         private List<Conversation> _conversations;
+        private List<string> _groups;
+        private List<string> _channels;
+        private int point = 0;
+        private DateTime? _creationDate = null;
 
         public UserActor()
         {
+            _conversations = new List<Conversation>();
+            _groups = new List<string>();
+            _channels = new List<string>();
+
             Receive<IUserId>(message =>
             {
                 switch (message)
@@ -22,11 +29,17 @@ namespace SocialNetwork.Api.Actors
                     case CreateUser createUser:
                         {
                             Console.WriteLine($"{Sender.Path} sent {message.UserId}");
-                            if (_conversations == null) _conversations = new List<Conversation>();
+                            _creationDate = DateTime.Now;
                             break;
                         }
                     case UserConversationMessage userConversation:
                         {
+                            if (_creationDate is null)
+                            {
+                                Console.WriteLine($"{userConversation.UserId} not exist.");
+                                break;
+                            }
+
                             Console.WriteLine($"{userConversation.UserId} <==> {userConversation.AnotherUserId} at {userConversation.CreatedAt}");
 
                             if (!_conversations.Any(c => c.ConversationId.Equals(userConversation.ConversationId, StringComparison.OrdinalIgnoreCase)))
@@ -36,6 +49,98 @@ namespace SocialNetwork.Api.Actors
                                     UserId1 = userConversation.UserId,
                                     UserId2 = userConversation.AnotherUserId
                                 });
+                            point++;
+                            break;
+                        }
+                    case UserStatusRequestMessage userStatus:
+                        {
+                            Sender.Tell(new UserStatusResponseMessage
+                            {
+                                UserId = userStatus.UserId,
+                                Point = point,
+                                Channels = _channels,
+                                Conversations = _conversations.Select(s => s.ConversationId).ToList(),
+                                Groups = _groups
+                            });
+                            break;
+                        }
+                    case GroupMemberMessage memberMessage:
+                        {
+                            if (_groups.Any(g => g.Equals(memberMessage.GroupId, StringComparison.OrdinalIgnoreCase)))
+                                break;
+                            
+                            var mediator = DistributedPubSub.Get(Context.System).Mediator;
+                            mediator.Tell(new Subscribe(memberMessage.GroupId, Self));
+
+                            _groups.Add(memberMessage.GroupId);
+                            point += 2;
+                            break;
+                        }
+                    case UserGroupMessage groupMessage:
+                        {
+                            Console.WriteLine($"Group {groupMessage.GroupId} , {groupMessage.UserId} sent {groupMessage.Message}");
+                            break;
+                        }
+                    default:
+                        break;
+                }
+            });
+
+            Receive<SubscribeAck>(ack =>
+            {
+                Console.WriteLine($"joined to Group.");
+            });
+
+            Receive<IGroupMessage>(message =>
+            {
+                if (_groups is null)
+                {
+                    Console.WriteLine($"{message.Sender} not exist.");
+                    return;
+                }
+
+                switch (message)
+                {
+                    case CreateGroupMessage createGroup:
+                        {
+                            if (!_groups.Any(g => g.Equals(createGroup.GroupId, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                Console.WriteLine($"{createGroup.Sender} Create Group {message.GroupId}");
+                                _groups.Add(createGroup.GroupId);
+                                point += 2;
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Group {message.GroupId} already exist.");
+                            }
+                            break;
+                        }
+                    default:
+                        break;
+                }
+            });
+
+            Receive<IChannelMessage>(message =>
+            {
+                if (_channels is null)
+                {
+                    Console.WriteLine($"{message.Sender} not exist.");
+                    return;
+                }
+                switch (message)
+                {
+                    case CreateChannelMessage createChannel:
+                        {
+                            if (!_channels.Any(c => c.Equals(createChannel.ChannelId, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                Console.WriteLine($"{createChannel.Sender} Create Channel {message.ChannelId}");
+                                _channels.Add(createChannel.ChannelId);
+                                point += 2;
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Channel {message.ChannelId} already exist.");
+                            }
                             break;
                         }
                     default:
@@ -59,11 +164,15 @@ namespace SocialNetwork.Api.Actors
             _shardRegion = shardRegion;
             Receive<IUserId>(message =>
             {
-                _shardRegion.Tell(message, Self);
-            });
-
-            Receive<object>(message => {
-                var cluster = Cluster.Get(Context.System);
+                switch (message)
+                {
+                    case UserStatusRequestMessage userStatus:
+                        _shardRegion.Forward(message);
+                        break;
+                    default:
+                        _shardRegion.Tell(message, Self);
+                        break;
+                }
             });
         }
 

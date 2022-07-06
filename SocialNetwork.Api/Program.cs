@@ -98,7 +98,13 @@ app.MapPost("/CreateUser", (CreateUser createUser, IActorRegistry reg) =>
 
     return Task.CompletedTask;
 }).WithName("CreateUser");
+app.MapGet("/UserStatus/{userId}", async ([FromRoute] string userId, IActorRegistry reg) =>
+{
+    var actor = reg.Get<UserActorProxy>();
+    var response = await actor.Ask<UserStatusResponseMessage>(new UserStatusRequestMessage { UserId = userId });
 
+    return response;
+}).WithName("UserStatus");
 // ------------------------------------------------------------Conversation
 app.MapPost("/Conversation", (SendConversationMessage conversation, IActorRegistry reg) =>
 {
@@ -112,7 +118,7 @@ app.MapPost("/Conversation", (SendConversationMessage conversation, IActorRegist
 
     return Task.CompletedTask;
 }).WithName("Sent Message To Conversation");
-app.MapGet("/Conversation/{conversationId}", async ([FromQuery] string conversationId, IActorRegistry reg) =>
+app.MapGet("/Conversation/{conversationId}", async ([FromRoute] string conversationId, IActorRegistry reg) =>
 {
     var actor = reg.Get<ConversationActorProxy>();
     var messages = await actor.Ask<List<ConversationMessage>>(new GetConversationMessage { ConversationId = conversationId });
@@ -129,7 +135,7 @@ app.MapPost("/Group/Create", (CreateGroup createGroup, IActorRegistry reg) =>
     return Task.CompletedTask;
 }).WithName("CreateGroup");
 
-app.MapPost("/Group/{groupName}/Join", ([FromQuery] string groupName, JoinGroup joinGroup, IActorRegistry reg) =>
+app.MapPost("/Group/{groupName}/Join", ([FromRoute] string groupName, JoinGroup joinGroup, IActorRegistry reg) =>
 {
     var actor = reg.Get<GroupActorProxy>();
     actor.Tell(new JoinGroupMessage { GroupId = groupName, Sender = joinGroup.Sender, Message = string.Empty });
@@ -137,10 +143,10 @@ app.MapPost("/Group/{groupName}/Join", ([FromQuery] string groupName, JoinGroup 
     return Task.CompletedTask;
 }).WithName("JoinGroup");
 
-app.MapPost("/Group/{groupName}", ([FromQuery] string groupName, ConversationMessage conversation, IActorRegistry reg) =>
+app.MapPost("/Group/{groupName}", ([FromRoute] string groupName, MessageToGroup groupMessage, IActorRegistry reg) =>
 {
-
-    return Task.CompletedTask;
+    var actor = reg.Get<GroupActorProxy>();
+    actor.Tell(new GroupMessage { GroupId = groupName, Sender = groupMessage.Sender, Message = groupMessage.Message });    
 }).WithName("SentToGroup");
 // ------------------------------------------------------------Group
 // ------------------------------------------------------------Channel
@@ -152,7 +158,7 @@ app.MapPost("/Channel/Create", (CreateChannel createChannel, IActorRegistry reg)
     return Task.CompletedTask;
 }).WithName("CreateChannel");
 
-app.MapPost("/Channel/{channelName}/Join", ([FromQuery] string channelName, JoinChannel joinChannel, IActorRegistry reg) =>
+app.MapPost("/Channel/{channelName}/Join", ([FromRoute] string channelName, JoinChannel joinChannel, IActorRegistry reg) =>
 {
     var actor = reg.Get<ChannelActorProxy>();
     actor.Tell(new JoinChannelMessage { ChannelId = channelName, Sender = joinChannel.Sender, Message = string.Empty });
@@ -160,7 +166,7 @@ app.MapPost("/Channel/{channelName}/Join", ([FromQuery] string channelName, Join
     return Task.CompletedTask;
 }).WithName("JoinChannel");
 
-app.MapPost("/Channel/{channelName}", ([FromQuery] string channelName, ConversationMessage conversation, IActorRegistry reg) =>
+app.MapPost("/Channel/{channelName}", ([FromRoute] string channelName, ConversationMessage conversation, IActorRegistry reg) =>
 {
 
     return Task.CompletedTask;

@@ -9,7 +9,7 @@ namespace SocialNetwork.Api.Actors
     {
         public List<string> _channelMessage;
         public List<string> _members;
-        public string _sender;
+        public string _owner;
 
         public static Props CreateProps()
         {
@@ -28,7 +28,7 @@ namespace SocialNetwork.Api.Actors
                             {
                                 _channelMessage = new List<string>();
                                 _members = new List<string>();
-                                _sender = createChannel.Sender;
+                                _owner = createChannel.Sender;
 
                                 Console.WriteLine($"{Sender.Path} sent CreateChannelMessage {message.ChannelId} at {DateTime.Now}");
                             }
