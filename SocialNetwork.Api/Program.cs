@@ -132,7 +132,7 @@ app.MapPost("/Group/Create", (CreateGroup createGroup, IActorRegistry reg) =>
 app.MapPost("/Group/{groupName}/Join", ([FromRoute] string groupName, JoinGroup joinGroup, IActorRegistry reg) =>
 {
     var actor = reg.Get<GroupActorProxy>();
-    actor.Tell(new JoinGroupMessage { GroupId = groupName, Sender = joinGroup.Sender});
+    actor.Tell(new JoinGroupMessage { GroupId = groupName, Sender = joinGroup.Sender });
 
     return Task.CompletedTask;
 }).WithName("JoinGroup");
@@ -168,6 +168,13 @@ app.MapPost("/Channel/{channelName}", ([FromRoute] string channelName, MessageTo
     var actor = reg.Get<ChannelActorProxy>();
     actor.Tell(new ChannelMessage { ChannelId = channelName, Sender = channelMessage.Sender, Message = channelMessage.Message });
 }).WithName("SentToChannel");
+
+app.MapGet("/Channel/{channelName}", async ([FromRoute] string channelName, IActorRegistry reg) =>
+{
+    var actor = reg.Get<ChannelActorProxy>();
+    var response = await actor.Ask<ChannelStatusResponse>(new ChannelStatusMessage { ChannelId = channelName, Sender = string.Empty });
+    return response;
+}).WithName("Get Channel Status");
 // ------------------------------------------------------------Channel
 
 

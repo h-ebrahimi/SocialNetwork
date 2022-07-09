@@ -28,10 +28,16 @@ namespace SocialNetwork.Api.Messages
 
     public class ChannelMessage : IChannelIdentifier, IChannelMessage
     {
-        public Guid MessageId { get; set; }
+        public Guid MessageId { get; set; } = Guid.NewGuid();
         public string ChannelId { get; set; }
         public string Sender { get; set; }
         public string Message { get; set; }
+    }
+
+    public class ChannelStatusMessage : IChannelIdentifier
+    {
+        public string ChannelId { get; set; }
+        public string Sender { get; set; }
     }
 
     public class ChannelMessageExtractor : HashCodeMessageExtractor

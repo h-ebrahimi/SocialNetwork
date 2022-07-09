@@ -1,12 +1,13 @@
 ﻿using Akka.Actor;
 using Akka.Cluster.Tools.PublishSubscribe;
 using SocialNetwork.Api.Messages;
+using SocialNetwork.Api.Models;
 
 namespace SocialNetwork.Api.Actors
 {
     public class ChannelActor : ReceiveActor
     {
-        public List<string> _channelMessage;
+        public Dictionary<Guid, ChannelMessage> _channelMessages;
         public List<string> _members;
         public string _owner;
         IActorRef _mediator;
@@ -18,68 +19,72 @@ namespace SocialNetwork.Api.Actors
 
         public ChannelActor()
         {
-            Receive<IChannelIdentifier>(message =>
+            Receive<CreateChannelMessage>(createChannel =>
             {
-                switch (message)
+                if (_channelMessages is null)
                 {
-                    case CreateChannelMessage createChannel:
-                        {
-                            if (_channelMessage is null)
-                            {
-                                _mediator = DistributedPubSub.Get(Context.System).Mediator;
+                    _mediator = DistributedPubSub.Get(Context.System).Mediator;
 
-                                _channelMessage = new List<string>();
-                                _members = new List<string>() { createChannel.Sender };
-                                _owner = createChannel.Sender;
+                    _channelMessages = new Dictionary<Guid, ChannelMessage>();
+                    _members = new List<string>() { createChannel.Sender };
+                    _owner = createChannel.Sender;
 
-                                Console.WriteLine($"{Sender.Path} sent CreateChannelMessage {message.ChannelId} at {DateTime.Now}");
-                            }
-                            else
-                                Console.WriteLine($"{Sender.Path} Channel {message.ChannelId} exist.");
-                            break;
-                        }
-                    case JoinChannelMessage joinChannel:
-                        {
-                            if (_members is null)
-                            {
-                                Console.WriteLine($" Channel {joinChannel.ChannelId} not exist.");
-                                break;
-                            }
-
-                            if (!_members.Contains(joinChannel.Sender))
-                            {
-                                _members.Add(joinChannel.Sender);
-                                Console.WriteLine($"{Sender.Path} sent JoinChannelMessage {joinChannel.ChannelId} at {DateTime.Now}");
-                            }
-                            else
-                                Console.WriteLine($"{Sender.Path} Channel {joinChannel.ChannelId} already has {joinChannel.Sender}");
-                            break;
-                        }
-                    case ChannelMessage channelMessage:
-                        {
-                            if (_members is null)
-                            {
-                                Console.WriteLine($"Channel {channelMessage.ChannelId} not exist.");
-                                break;
-                            }
-
-                            if (!_owner.Equals(channelMessage.Sender, StringComparison.OrdinalIgnoreCase))
-                            {
-                                Console.WriteLine($"{channelMessage.Sender} not owner of Channel {channelMessage.ChannelId}");
-                                break;
-                            }
-
-                            _mediator.Tell(new Publish(channelMessage.ChannelId, new UserChannelMessage
-                            {
-                                ChannelId = channelMessage.ChannelId,
-                                UserId = channelMessage.Sender,
-                                Message = channelMessage.Message
-                            }));
-                            break;
-                        }
-                    default:
-                        break;
+                    Console.WriteLine($"{Sender.Path} sent CreateChannelMessage {createChannel.ChannelId} at {DateTime.Now}");
                 }
+                else
+                    Console.WriteLine($"{Sender.Path} Channel {createChannel.ChannelId} already exist.");
+            });
+
+            Receive<JoinChannelMessage>(joinChannel =>
+            {
+                if (_members is null)
+                {
+                    Console.WriteLine($" Channel {joinChannel.ChannelId} not exist.");
+                    return;
+                }
+
+                if (!_members.Contains(joinChannel.Sender))
+                {
+                    _members.Add(joinChannel.Sender);
+                    Console.WriteLine($"{Sender.Path} sent JoinChannelMessage {joinChannel.ChannelId} at {DateTime.Now}");
+                }
+                else
+                    Console.WriteLine($"{Sender.Path} Channel {joinChannel.ChannelId} already has {joinChannel.Sender}");
+            });
+
+            Receive<ChannelMessage>(channelMessage =>
+            {
+                if (_members is null)
+                {
+                    Console.WriteLine($"Channel {channelMessage.ChannelId} not exist.");
+                    return;
+                }
+
+                if (!_owner.Equals(channelMessage.Sender, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"{channelMessage.Sender} not owner of Channel {channelMessage.ChannelId}");
+                    return;
+                }
+
+                _channelMessages.Add(channelMessage.MessageId, channelMessage);
+
+                _mediator.Tell(new Publish(channelMessage.ChannelId, new UserChannelMessage
+                {
+                    ChannelId = channelMessage.ChannelId,
+                    UserId = channelMessage.Sender,
+                    Message = channelMessage.Message
+                }));
+            });
+
+            Receive<ChannelStatusMessage>(statusMessage =>
+            {
+                Sender.Tell(new ChannelStatusResponse
+                {
+                    ChannelId = statusMessage.ChannelId,
+                    Members = _members,
+                    Owner = _owner,
+                    Messages = _channelMessages
+                });
             });
         }
     }
@@ -108,6 +113,11 @@ namespace SocialNetwork.Api.Actors
                         {
                             _channelShardRegion.Forward(message);
                             _UserShardRegion.Forward(new ChannelMemberMessage { ChannelId = message.ChannelId, UserId = message.Sender });
+                            break;
+                        }
+                    case ChannelStatusMessage channelStatus:
+                        {
+                            _channelShardRegion.Forward(channelStatus);
                             break;
                         }
                     default:

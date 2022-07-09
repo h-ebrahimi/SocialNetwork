@@ -2,9 +2,6 @@
 using Akka.Cluster.Tools.PublishSubscribe;
 using SocialNetwork.Api.Messages;
 using SocialNetwork.Api.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SocialNetwork.Api.Actors
 {
@@ -28,8 +25,9 @@ namespace SocialNetwork.Api.Actors
                 {
                     case CreateUser createUser:
                         {
-                            Console.WriteLine($"{Sender.Path} sent {message.UserId}");
                             _creationDate = DateTime.Now;
+                            point = 0;
+                            Console.WriteLine($"{message.UserId} created at {_creationDate}");
                             break;
                         }
                     case UserConversationMessage userConversation:
@@ -68,7 +66,7 @@ namespace SocialNetwork.Api.Actors
                         {
                             if (_groups.Any(g => g.Equals(memberMessage.GroupId, StringComparison.OrdinalIgnoreCase)))
                                 break;
-                            
+
                             var mediator = DistributedPubSub.Get(Context.System).Mediator;
                             mediator.Tell(new Subscribe(memberMessage.GroupId, Self));
 
@@ -79,6 +77,7 @@ namespace SocialNetwork.Api.Actors
                     case UserGroupMessage groupMessage:
                         {
                             Console.WriteLine($"Group {groupMessage.GroupId} , {groupMessage.UserId} sent {groupMessage.Message}");
+                            point++;
                             break;
                         }
                     case ChannelMemberMessage memberMessage:
@@ -96,9 +95,10 @@ namespace SocialNetwork.Api.Actors
                             point += 3;
                             break;
                         }
-                    case UserChannelMessage groupMessage:
+                    case UserChannelMessage channelMessage:
                         {
-                            Console.WriteLine($"Channel {groupMessage.ChannelId} , {groupMessage.UserId} sent {groupMessage.Message}");
+                            Console.WriteLine($"Channel {channelMessage.ChannelId} , {channelMessage.UserId} sent {channelMessage.Message}");
+                            point++;
                             break;
                         }
                     default:
@@ -109,63 +109,6 @@ namespace SocialNetwork.Api.Actors
             Receive<SubscribeAck>(ack =>
             {
                 Console.WriteLine($"joined to Group.");
-            });
-
-            Receive<IGroupIdentifier>(message =>
-            {
-                if (_groups is null)
-                {
-                    Console.WriteLine($"{message.Sender} not exist.");
-                    return;
-                }
-
-                switch (message)
-                {
-                    case CreateGroupMessage createGroup:
-                        {
-                            if (!_groups.Any(g => g.Equals(createGroup.GroupId, StringComparison.OrdinalIgnoreCase)))
-                            {
-                                Console.WriteLine($"{createGroup.Sender} Create Group {message.GroupId}");
-                                _groups.Add(createGroup.GroupId);
-                                point += 2;
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Group {message.GroupId} already exist.");
-                            }
-                            break;
-                        }
-                    default:
-                        break;
-                }
-            });
-
-            Receive<IChannelIdentifier>(message =>
-            {
-                if (_channels is null)
-                {
-                    Console.WriteLine($"{message.Sender} not exist.");
-                    return;
-                }
-                switch (message)
-                {
-                    case CreateChannelMessage createChannel:
-                        {
-                            if (!_channels.Any(c => c.Equals(createChannel.ChannelId, StringComparison.OrdinalIgnoreCase)))
-                            {
-                                Console.WriteLine($"{createChannel.Sender} Create Channel {message.ChannelId}");
-                                _channels.Add(createChannel.ChannelId);
-                                point += 2;
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Channel {message.ChannelId} already exist.");
-                            }
-                            break;
-                        }
-                    default:
-                        break;
-                }
             });
         }
 

@@ -117,7 +117,7 @@ namespace SocialNetwork.Api.Actors
                         }
                     case GroupStatusMessage groupStatus:
                         {
-                            _groupShardRegion.Forward(message);
+                            _groupShardRegion.Forward(groupStatus);
                             break;
                         }
                     default:
