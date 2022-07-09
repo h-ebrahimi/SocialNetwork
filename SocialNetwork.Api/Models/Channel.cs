@@ -25,5 +25,6 @@ namespace SocialNetwork.Api.Models
         public string Owner { get; set; }
         public Dictionary<Guid, ChannelMessage> Messages { get; set; }
         public List<string> Members { get; set; }
+        public DateTime CreationDate { get; set; }
     }
 }

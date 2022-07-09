@@ -12,6 +12,7 @@ namespace SocialNetwork.Api.Actors
         private List<string> _channels;
         private int point = 0;
         private DateTime? _creationDate = null;
+        private string _userId;
 
         public UserActor()
         {
@@ -19,25 +20,26 @@ namespace SocialNetwork.Api.Actors
             _groups = new List<string>();
             _channels = new List<string>();
 
+            Receive<CreateUser>(createUser =>
+            {
+                _creationDate = DateTime.Now;
+                point = 0;
+                _userId = createUser.UserId;
+                Console.WriteLine($"{createUser.UserId} created at {_creationDate}");
+            });
+
             Receive<IUserId>(message =>
             {
+                if (_creationDate is null)
+                {
+                    Console.WriteLine($"{_userId} not exist.");
+                    return;
+                }
+                
                 switch (message)
                 {
-                    case CreateUser createUser:
-                        {
-                            _creationDate = DateTime.Now;
-                            point = 0;
-                            Console.WriteLine($"{message.UserId} created at {_creationDate}");
-                            break;
-                        }
                     case UserConversationMessage userConversation:
                         {
-                            if (_creationDate is null)
-                            {
-                                Console.WriteLine($"{userConversation.UserId} not exist.");
-                                break;
-                            }
-
                             Console.WriteLine($"{userConversation.UserId} <==> {userConversation.AnotherUserId} at {userConversation.CreatedAt}");
 
                             if (!_conversations.Any(c => c.ConversationId.Equals(userConversation.ConversationId, StringComparison.OrdinalIgnoreCase)))
@@ -108,7 +110,7 @@ namespace SocialNetwork.Api.Actors
 
             Receive<SubscribeAck>(ack =>
             {
-                Console.WriteLine($"joined to Group.");
+                Console.WriteLine($"{_userId}joined to {ack.Subscribe.Topic}.");
             });
         }
 

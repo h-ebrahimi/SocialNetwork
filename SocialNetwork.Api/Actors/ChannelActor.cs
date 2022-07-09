@@ -29,10 +29,10 @@ namespace SocialNetwork.Api.Actors
                     _members = new List<string>() { createChannel.Sender };
                     _owner = createChannel.Sender;
 
-                    Console.WriteLine($"{Sender.Path} sent CreateChannelMessage {createChannel.ChannelId} at {DateTime.Now}");
+                    Console.WriteLine($"{createChannel.Sender} sent CreateChannelMessage {createChannel.ChannelId} at {DateTime.Now}");
                 }
                 else
-                    Console.WriteLine($"{Sender.Path} Channel {createChannel.ChannelId} already exist.");
+                    Console.WriteLine($"{createChannel.Sender} Channel {createChannel.ChannelId} already exist.");
             });
 
             Receive<JoinChannelMessage>(joinChannel =>
@@ -46,10 +46,10 @@ namespace SocialNetwork.Api.Actors
                 if (!_members.Contains(joinChannel.Sender))
                 {
                     _members.Add(joinChannel.Sender);
-                    Console.WriteLine($"{Sender.Path} sent JoinChannelMessage {joinChannel.ChannelId} at {DateTime.Now}");
+                    Console.WriteLine($"{joinChannel.Sender} sent JoinChannelMessage {joinChannel.ChannelId} at {DateTime.Now}");
                 }
                 else
-                    Console.WriteLine($"{Sender.Path} Channel {joinChannel.ChannelId} already has {joinChannel.Sender}");
+                    Console.WriteLine($"{joinChannel.Sender} Channel {joinChannel.ChannelId} already has {joinChannel.Sender}");
             });
 
             Receive<ChannelMessage>(channelMessage =>
@@ -72,12 +72,19 @@ namespace SocialNetwork.Api.Actors
                 {
                     ChannelId = channelMessage.ChannelId,
                     UserId = channelMessage.Sender,
-                    Message = channelMessage.Message
+                    Message = channelMessage.Message,
+                    MessageId = channelMessage.MessageId
                 }));
             });
 
             Receive<ChannelStatusMessage>(statusMessage =>
             {
+                if (_members is null)
+                {
+                    Console.WriteLine($"Channel {statusMessage.ChannelId} not exist.");
+                    return;
+                }
+                
                 Sender.Tell(new ChannelStatusResponse
                 {
                     ChannelId = statusMessage.ChannelId,

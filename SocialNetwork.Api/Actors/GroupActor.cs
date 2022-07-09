@@ -29,10 +29,10 @@ namespace SocialNetwork.Api.Actors
                     _members = new List<string> { createGroup.Sender };
                     _owner = createGroup.Sender;
 
-                    Console.WriteLine($"{Sender.Path} sent CreateGroupMessage {createGroup.GroupId} at {DateTime.Now}");
+                    Console.WriteLine($"{createGroup.Sender} sent CreateGroupMessage {createGroup.GroupId} at {DateTime.Now}");
                 }
                 else
-                    Console.WriteLine($"{Sender.Path} Group {createGroup.GroupId} exist.");
+                    Console.WriteLine($"{createGroup.Sender} Group {createGroup.GroupId} exist.");
             });
 
             Receive<JoinGroupMessage>(joinGroup =>
@@ -46,10 +46,10 @@ namespace SocialNetwork.Api.Actors
                 if (!_members.Contains(joinGroup.Sender))
                 {
                     _members.Add(joinGroup.Sender);
-                    Console.WriteLine($"{Sender.Path} sent JoinGroupMessage {joinGroup.GroupId} at {DateTime.Now}");
+                    Console.WriteLine($"{joinGroup.Sender} JoinGroupMessage {joinGroup.GroupId} at {DateTime.Now}");
                 }
                 else
-                    Console.WriteLine($"{Sender.Path} Group {joinGroup.GroupId} already has {joinGroup.Sender}");
+                    Console.WriteLine($"Group {joinGroup.GroupId} already has {joinGroup.Sender}");
             });
 
             Receive<GroupMessage>(groupMessage =>
@@ -78,6 +78,12 @@ namespace SocialNetwork.Api.Actors
             });
 
             Receive<GroupStatusMessage>(message => {
+                if (_members is null)
+                {
+                    Console.WriteLine($"Group {message.GroupId} not exist.");
+                    return;
+                }
+                
                 Sender.Tell(new GroupStatusResponse
                 {
                     GroupId = message.GroupId,
