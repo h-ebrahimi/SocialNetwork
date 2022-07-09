@@ -19,6 +19,8 @@ namespace SocialNetwork.Api.Actors
 
         public ChannelActor()
         {
+            Context.SetReceiveTimeout(TimeSpan.FromMinutes(10));
+            
             Receive<CreateChannelMessage>(createChannel =>
             {
                 if (_channelMessages is null)

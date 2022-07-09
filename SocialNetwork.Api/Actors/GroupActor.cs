@@ -19,6 +19,7 @@ namespace SocialNetwork.Api.Actors
 
         public GroupActor()
         {
+            Context.SetReceiveTimeout(TimeSpan.FromMinutes(10));
             Receive<CreateGroupMessage>(createGroup =>
             {
                 if (_groupMessages is null)

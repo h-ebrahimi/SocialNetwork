@@ -15,6 +15,7 @@ namespace SocialNetwork.Api.Actors
 
         public ConversationActor()
         {
+            Context.SetReceiveTimeout(TimeSpan.FromMinutes(10));
             _conversations = new List<ConversationMessage>();
             Receive<IConversationMessage>(message =>
             {

@@ -16,6 +16,7 @@ namespace SocialNetwork.Api.Actors
 
         public UserActor()
         {
+            Context.SetReceiveTimeout(TimeSpan.FromMinutes(10));
             _conversations = new List<Conversation>();
             _groups = new List<string>();
             _channels = new List<string>();
@@ -33,6 +34,7 @@ namespace SocialNetwork.Api.Actors
                 if (_creationDate is null)
                 {
                     Console.WriteLine($"{_userId} not exist.");
+                    Sender.Tell(new UserStatusResponseMessage());
                     return;
                 }
                 

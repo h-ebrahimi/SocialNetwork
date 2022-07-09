@@ -62,7 +62,7 @@ builder.Services.AddAkka(_options.ActorSystemName, builder =>
     {
         var userShardRegion = actorRegistry.Get<IUserId>();
         actorRegistry.Register<UserActorProxy>(actorSystem.ActorOf(Props.Create(() => new UserActorProxy(userShardRegion))));
-
+        
         var conversationSharedRegion = actorRegistry.Get<IConversationMessage>();
         actorRegistry.Register<ConversationActorProxy>(actorSystem.ActorOf(Props.Create(() => new ConversationActorProxy(conversationSharedRegion, userShardRegion))));
 
