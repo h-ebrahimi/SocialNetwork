@@ -112,7 +112,7 @@ namespace SocialNetwork.Api.Actors
 
             Receive<SubscribeAck>(ack =>
             {
-                Console.WriteLine($"{_userId}joined to {ack.Subscribe.Topic}.");
+                Console.WriteLine($"{_userId} joined to {ack.Subscribe.Topic}.");
             });
         }
 
