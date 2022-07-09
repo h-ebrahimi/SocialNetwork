@@ -23,6 +23,13 @@ namespace SocialNetwork.Api.Messages
         public string Message { get; set; }
     }
 
+    public class ChannelMessage : IChannelMessage
+    {
+        public string ChannelId { get; set; }
+        public string Sender { get; set; }
+        public string Message { get; set; }
+    }
+
     public class ChannelMessageExtractor : HashCodeMessageExtractor
     {
         public ChannelMessageExtractor(int maxNumberOfShards) : base(maxNumberOfShards)

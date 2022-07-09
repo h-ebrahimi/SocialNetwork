@@ -2,11 +2,7 @@ using Akka.Actor;
 using Akka.Cluster.Hosting;
 using Akka.Hosting;
 using Akka.Remote.Hosting;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Petabridge.Cmd.Cluster;
 using Petabridge.Cmd.Cluster.Sharding;
 using Petabridge.Cmd.Host;
@@ -15,8 +11,6 @@ using SocialNetwork.Api.Actors;
 using SocialNetwork.Api.Messages;
 using SocialNetwork.Api.Models;
 using SocialNetwork.Api.Options;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -146,7 +140,7 @@ app.MapPost("/Group/{groupName}/Join", ([FromRoute] string groupName, JoinGroup 
 app.MapPost("/Group/{groupName}", ([FromRoute] string groupName, MessageToGroup groupMessage, IActorRegistry reg) =>
 {
     var actor = reg.Get<GroupActorProxy>();
-    actor.Tell(new GroupMessage { GroupId = groupName, Sender = groupMessage.Sender, Message = groupMessage.Message });    
+    actor.Tell(new GroupMessage { GroupId = groupName, Sender = groupMessage.Sender, Message = groupMessage.Message });
 }).WithName("SentToGroup");
 // ------------------------------------------------------------Group
 // ------------------------------------------------------------Channel
@@ -166,10 +160,10 @@ app.MapPost("/Channel/{channelName}/Join", ([FromRoute] string channelName, Join
     return Task.CompletedTask;
 }).WithName("JoinChannel");
 
-app.MapPost("/Channel/{channelName}", ([FromRoute] string channelName, ConversationMessage conversation, IActorRegistry reg) =>
+app.MapPost("/Channel/{channelName}", ([FromRoute] string channelName, MessageToChannel channelMessage, IActorRegistry reg) =>
 {
-
-    return Task.CompletedTask;
+    var actor = reg.Get<ChannelActorProxy>();
+    actor.Tell(new ChannelMessage { ChannelId = channelName, Sender = channelMessage.Sender, Message = channelMessage.Message });
 }).WithName("SentToChannel");
 // ------------------------------------------------------------Channel
 

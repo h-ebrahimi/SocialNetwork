@@ -62,13 +62,13 @@ namespace SocialNetwork.Api.Actors
                             if (_members is null)
                             {
                                 Console.WriteLine($"Group {groupMessage.GroupId} not exist.");
-                                return;
+                                break;
                             }
 
                             if (!_members.Contains(groupMessage.Sender))
                             {
-                                Console.WriteLine($"{groupMessage.Sender} no member og group {groupMessage.GroupId}");
-                                return;
+                                Console.WriteLine($"{groupMessage.Sender} no member of group {groupMessage.GroupId}");
+                                break;
                             }
 
                             _mediator.Tell(new Publish(groupMessage.GroupId, new UserGroupMessage

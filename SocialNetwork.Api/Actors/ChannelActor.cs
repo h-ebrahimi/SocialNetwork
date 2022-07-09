@@ -1,7 +1,6 @@
 ﻿using Akka.Actor;
+using Akka.Cluster.Tools.PublishSubscribe;
 using SocialNetwork.Api.Messages;
-using System;
-using System.Collections.Generic;
 
 namespace SocialNetwork.Api.Actors
 {
@@ -10,6 +9,7 @@ namespace SocialNetwork.Api.Actors
         public List<string> _channelMessage;
         public List<string> _members;
         public string _owner;
+        IActorRef _mediator;
 
         public static Props CreateProps()
         {
@@ -26,8 +26,10 @@ namespace SocialNetwork.Api.Actors
                         {
                             if (_channelMessage is null)
                             {
+                                _mediator = DistributedPubSub.Get(Context.System).Mediator;
+
                                 _channelMessage = new List<string>();
-                                _members = new List<string>();
+                                _members = new List<string>() { createChannel.Sender };
                                 _owner = createChannel.Sender;
 
                                 Console.WriteLine($"{Sender.Path} sent CreateChannelMessage {message.ChannelId} at {DateTime.Now}");
@@ -51,6 +53,28 @@ namespace SocialNetwork.Api.Actors
                             }
                             else
                                 Console.WriteLine($"{Sender.Path} Channel {joinChannel.ChannelId} already has {joinChannel.Sender}");
+                            break;
+                        }
+                    case ChannelMessage channelMessage:
+                        {
+                            if (_members is null)
+                            {
+                                Console.WriteLine($"Channel {channelMessage.ChannelId} not exist.");
+                                break;
+                            }
+
+                            if (!_owner.Equals(channelMessage.Sender, StringComparison.OrdinalIgnoreCase))
+                            {
+                                Console.WriteLine($"{channelMessage.Sender} not owner of Channel {channelMessage.ChannelId}");
+                                break;
+                            }
+
+                            _mediator.Tell(new Publish(channelMessage.ChannelId, new UserChannelMessage
+                            {
+                                ChannelId = channelMessage.ChannelId,
+                                UserId = channelMessage.Sender,
+                                Message = channelMessage.Message
+                            }));
                             break;
                         }
                     default:
@@ -77,7 +101,19 @@ namespace SocialNetwork.Api.Actors
 
             Receive<IChannelMessage>(message =>
             {
-                _channelShardRegion.Tell(message);
+                switch (message)
+                {
+                    case CreateChannelMessage createGroup:
+                    case JoinChannelMessage joinGroup:
+                        {
+                            _channelShardRegion.Forward(message);
+                            _UserShardRegion.Forward(new ChannelMemberMessage { ChannelId = message.ChannelId, UserId = message.Sender });
+                            break;
+                        }
+                    default:
+                        _channelShardRegion.Tell(message);
+                        break;
+                }
             });
         }
     }

@@ -22,10 +22,23 @@ namespace SocialNetwork.Api.Messages
         public string GroupId { get; set; }
     }
 
+    public class ChannelMemberMessage : IUserId
+    {
+        public string UserId { get; set; }
+        public string ChannelId { get; set; }
+    }
+
     public class UserGroupMessage : IUserId
     {
         public string GroupId { get; set; }
         public string UserId { get; set; }
+        public string Message { get; set; }
+    }
+
+    public class UserChannelMessage : IUserId
+    {
+        public string UserId { get; set; }
+        public string ChannelId { get; set; }
         public string Message { get; set; }
     }
 

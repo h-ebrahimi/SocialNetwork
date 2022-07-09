@@ -81,6 +81,26 @@ namespace SocialNetwork.Api.Actors
                             Console.WriteLine($"Group {groupMessage.GroupId} , {groupMessage.UserId} sent {groupMessage.Message}");
                             break;
                         }
+                    case ChannelMemberMessage memberMessage:
+                        {
+                            if (_channels.Any(g => g.Equals(memberMessage.ChannelId, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                Console.WriteLine($"You must first join to Channel {memberMessage.ChannelId} and then sent messages.");
+                                break;
+                            }
+
+                            var mediator = DistributedPubSub.Get(Context.System).Mediator;
+                            mediator.Tell(new Subscribe(memberMessage.ChannelId, Self));
+
+                            _channels.Add(memberMessage.ChannelId);
+                            point += 3;
+                            break;
+                        }
+                    case UserChannelMessage groupMessage:
+                        {
+                            Console.WriteLine($"Channel {groupMessage.ChannelId} , {groupMessage.UserId} sent {groupMessage.Message}");
+                            break;
+                        }
                     default:
                         break;
                 }
