@@ -18,7 +18,7 @@ namespace SocialNetwork.Api.Actors
 
         public ChannelActor()
         {
-            Receive<IChannelMessage>(message =>
+            Receive<IChannelIdentifier>(message =>
             {
                 switch (message)
                 {
@@ -99,7 +99,7 @@ namespace SocialNetwork.Api.Actors
             _UserShardRegion = userShardRegion;
             _channelShardRegion = channelShardRegion;
 
-            Receive<IChannelMessage>(message =>
+            Receive<IChannelIdentifier>(message =>
             {
                 switch (message)
                 {

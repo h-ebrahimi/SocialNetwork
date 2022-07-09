@@ -1,4 +1,6 @@
-﻿namespace SocialNetwork.Api.Models
+﻿using SocialNetwork.Api.Messages;
+
+namespace SocialNetwork.Api.Models
 {
     public class CreateGroup
     {
@@ -7,7 +9,7 @@
     }
 
     public class JoinGroup
-    {        
+    {
         public string Sender { get; set; }
     }
 
@@ -15,5 +17,13 @@
     {
         public string Sender { get; set; }
         public string Message { get; set; }
+    }
+
+    public class GroupStatusResponse
+    {
+        public string GroupId { get; set; }
+        public string Owner { get; set; }
+        public Dictionary<Guid, GroupMessage> Messages { get; set; }
+        public List<string> Members { get; set; }
     }
 }

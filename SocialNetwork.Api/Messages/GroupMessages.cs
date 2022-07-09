@@ -2,32 +2,42 @@
 
 namespace SocialNetwork.Api.Messages
 {
-    public interface IGroupMessage
+    public interface IGroupIdentifier
     {
         string GroupId { get; set; }
         string Sender { get; set; }
+    }
+
+    public interface IGroupMessage
+    {
+        Guid MessageId { get; set; } 
         string Message { get; set; }
     }
 
-    public class CreateGroupMessage : IGroupMessage
+    public class CreateGroupMessage : IGroupIdentifier 
     {
         public string GroupId { get; set; }
         public string Sender { get; set; }
-        public string Message { get; set; }
     }
 
-    public class JoinGroupMessage : IGroupMessage
+    public class JoinGroupMessage : IGroupIdentifier
     {
         public string GroupId { get; set; }
         public string Sender { get; set; }
-        public string Message { get; set; }
     }
 
-    public class GroupMessage : IGroupMessage
+    public class GroupMessage : IGroupIdentifier , IGroupMessage
+    {
+        public Guid MessageId { get; set; } = Guid.NewGuid();
+        public string Message { get; set; }
+        public string GroupId { get; set; }
+        public string Sender { get; set; }
+    }
+
+    public class GroupStatusMessage : IGroupIdentifier
     {
         public string GroupId { get; set; }
         public string Sender { get; set; }
-        public string Message { get; set; }
     }
 
     public class GroupMessageExtractor : HashCodeMessageExtractor
@@ -38,13 +48,13 @@ namespace SocialNetwork.Api.Messages
 
         public override string EntityId(object message)
         {
-            var groupMessage    = message as IGroupMessage;
+            var groupMessage = message as IGroupIdentifier;
             return groupMessage.GroupId;
         }
 
         public override object EntityMessage(object message)
         {
-            var groupMessage = message as IGroupMessage;
+            var groupMessage = message as IGroupIdentifier;
             return groupMessage;
         }
     }

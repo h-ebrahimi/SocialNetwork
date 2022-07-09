@@ -50,11 +50,11 @@ builder.Services.AddAkka(_options.ActorSystemName, builder =>
                 p => ConversationActor.CreateProps(),
                 new ConversationMessageExtractor(_options.Conversation.MaxNumberOfShards),
                 new ShardOptions())
-    .WithShardRegion<IGroupMessage>(_options.Group.ShardTypename,
+    .WithShardRegion<IGroupIdentifier>(_options.Group.ShardTypename,
                 p => GroupActor.CreateProps(),
                 new GroupMessageExtractor(_options.Group.MaxNumberOfShards),
                 new ShardOptions())
-    .WithShardRegion<IChannelMessage>(_options.Channel.ShardTypename,
+    .WithShardRegion<IChannelIdentifier>(_options.Channel.ShardTypename,
                 p => ChannelActor.CreateProps(),
                 new ChannelMessageExtractor(_options.Channel.MaxNumberOfShards),
                 new ShardOptions())
@@ -66,10 +66,10 @@ builder.Services.AddAkka(_options.ActorSystemName, builder =>
         var conversationSharedRegion = actorRegistry.Get<IConversationMessage>();
         actorRegistry.Register<ConversationActorProxy>(actorSystem.ActorOf(Props.Create(() => new ConversationActorProxy(conversationSharedRegion, userShardRegion))));
 
-        var groupShardRegion = actorRegistry.Get<IGroupMessage>();
+        var groupShardRegion = actorRegistry.Get<IGroupIdentifier>();
         actorRegistry.Register<GroupActorProxy>(actorSystem.ActorOf(Props.Create(() => new GroupActorProxy(groupShardRegion, userShardRegion))));
 
-        var channelShardRegion = actorRegistry.Get<IChannelMessage>();
+        var channelShardRegion = actorRegistry.Get<IChannelIdentifier>();
         actorRegistry.Register<ChannelActorProxy>(actorSystem.ActorOf(Props.Create(() => new ChannelActorProxy(channelShardRegion, userShardRegion))));
     });
 });
@@ -124,7 +124,7 @@ app.MapGet("/Conversation/{conversationId}", async ([FromRoute] string conversat
 app.MapPost("/Group/Create", (CreateGroup createGroup, IActorRegistry reg) =>
 {
     var actor = reg.Get<GroupActorProxy>();
-    actor.Tell(new CreateGroupMessage { GroupId = createGroup.Name, Sender = createGroup.Sender, Message = string.Empty });
+    actor.Tell(new CreateGroupMessage { GroupId = createGroup.Name, Sender = createGroup.Sender });
 
     return Task.CompletedTask;
 }).WithName("CreateGroup");
@@ -132,7 +132,7 @@ app.MapPost("/Group/Create", (CreateGroup createGroup, IActorRegistry reg) =>
 app.MapPost("/Group/{groupName}/Join", ([FromRoute] string groupName, JoinGroup joinGroup, IActorRegistry reg) =>
 {
     var actor = reg.Get<GroupActorProxy>();
-    actor.Tell(new JoinGroupMessage { GroupId = groupName, Sender = joinGroup.Sender, Message = string.Empty });
+    actor.Tell(new JoinGroupMessage { GroupId = groupName, Sender = joinGroup.Sender});
 
     return Task.CompletedTask;
 }).WithName("JoinGroup");
@@ -142,22 +142,25 @@ app.MapPost("/Group/{groupName}", ([FromRoute] string groupName, MessageToGroup 
     var actor = reg.Get<GroupActorProxy>();
     actor.Tell(new GroupMessage { GroupId = groupName, Sender = groupMessage.Sender, Message = groupMessage.Message });
 }).WithName("SentToGroup");
+
+app.MapGet("/Group/{groupName}", async ([FromRoute] string groupName, IActorRegistry reg) =>
+{
+    var actor = reg.Get<GroupActorProxy>();
+    var response = await actor.Ask<GroupStatusResponse>(new GroupStatusMessage { GroupId = groupName, Sender = string.Empty });
+    return response;
+}).WithName("Get Group Status");
 // ------------------------------------------------------------Group
 // ------------------------------------------------------------Channel
 app.MapPost("/Channel/Create", (CreateChannel createChannel, IActorRegistry reg) =>
 {
     var actor = reg.Get<ChannelActorProxy>();
-    actor.Tell(new CreateChannelMessage { ChannelId = createChannel.Name, Sender = createChannel.Sender, Message = string.Empty });
-
-    return Task.CompletedTask;
+    actor.Tell(new CreateChannelMessage { ChannelId = createChannel.Name, Sender = createChannel.Sender });
 }).WithName("CreateChannel");
 
 app.MapPost("/Channel/{channelName}/Join", ([FromRoute] string channelName, JoinChannel joinChannel, IActorRegistry reg) =>
 {
     var actor = reg.Get<ChannelActorProxy>();
-    actor.Tell(new JoinChannelMessage { ChannelId = channelName, Sender = joinChannel.Sender, Message = string.Empty });
-
-    return Task.CompletedTask;
+    actor.Tell(new JoinChannelMessage { ChannelId = channelName, Sender = joinChannel.Sender });
 }).WithName("JoinChannel");
 
 app.MapPost("/Channel/{channelName}", ([FromRoute] string channelName, MessageToChannel channelMessage, IActorRegistry reg) =>

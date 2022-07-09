@@ -111,7 +111,7 @@ namespace SocialNetwork.Api.Actors
                 Console.WriteLine($"joined to Group.");
             });
 
-            Receive<IGroupMessage>(message =>
+            Receive<IGroupIdentifier>(message =>
             {
                 if (_groups is null)
                 {
@@ -140,7 +140,7 @@ namespace SocialNetwork.Api.Actors
                 }
             });
 
-            Receive<IChannelMessage>(message =>
+            Receive<IChannelIdentifier>(message =>
             {
                 if (_channels is null)
                 {

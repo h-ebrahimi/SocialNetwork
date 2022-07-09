@@ -1,14 +1,13 @@
 ﻿using Akka.Actor;
 using Akka.Cluster.Tools.PublishSubscribe;
 using SocialNetwork.Api.Messages;
-using System;
-using System.Collections.Generic;
+using SocialNetwork.Api.Models;
 
 namespace SocialNetwork.Api.Actors
 {
     public class GroupActor : ReceiveActor
     {
-        public List<string> _groupMessage;
+        public Dictionary<Guid, GroupMessage> _groupMessages;
         public List<string> _members;
         public string _owner;
         IActorRef _mediator;
@@ -20,69 +19,73 @@ namespace SocialNetwork.Api.Actors
 
         public GroupActor()
         {
-            Receive<IGroupMessage>(message =>
+            Receive<CreateGroupMessage>(createGroup =>
             {
-                switch (message)
+                if (_groupMessages is null)
                 {
-                    case CreateGroupMessage createGroup:
-                        {
-                            if (_groupMessage is null)
-                            {
-                                _mediator = DistributedPubSub.Get(Context.System).Mediator;
-                                
-                                _groupMessage = new List<string>();
-                                _members = new List<string> { createGroup.Sender };
-                                _owner = createGroup.Sender;
+                    _mediator = DistributedPubSub.Get(Context.System).Mediator;
 
-                                Console.WriteLine($"{Sender.Path} sent CreateGroupMessage {message.GroupId} at {DateTime.Now}");
-                            }
-                            else
-                                Console.WriteLine($"{Sender.Path} Group {message.GroupId} exist.");
-                            break;
-                        }
-                    case JoinGroupMessage joinGroup:
-                        {
-                            if (_members is null)
-                            {
-                                Console.WriteLine($"Group {joinGroup.GroupId} not exist.");
-                                return;
-                            }
+                    _groupMessages = new Dictionary<Guid, GroupMessage>();
+                    _members = new List<string> { createGroup.Sender };
+                    _owner = createGroup.Sender;
 
-                            if (!_members.Contains(joinGroup.Sender))
-                            {
-                                _members.Add(joinGroup.Sender);
-                                Console.WriteLine($"{Sender.Path} sent JoinGroupMessage {joinGroup.GroupId} at {DateTime.Now}");
-                            }
-                            else
-                                Console.WriteLine($"{Sender.Path} Group {joinGroup.GroupId} already has {joinGroup.Sender}");
-                            break;
-                        }
-                    case GroupMessage groupMessage:
-                        {
-                            if (_members is null)
-                            {
-                                Console.WriteLine($"Group {groupMessage.GroupId} not exist.");
-                                break;
-                            }
-
-                            if (!_members.Contains(groupMessage.Sender))
-                            {
-                                Console.WriteLine($"{groupMessage.Sender} no member of group {groupMessage.GroupId}");
-                                break;
-                            }
-
-                            _mediator.Tell(new Publish(groupMessage.GroupId, new UserGroupMessage
-                            {
-                                GroupId = groupMessage.GroupId,
-                                UserId = groupMessage.Sender,
-                                Message = groupMessage.Message
-                            }));
-                            break;
-                        }
-                    default:
-                        break;
+                    Console.WriteLine($"{Sender.Path} sent CreateGroupMessage {createGroup.GroupId} at {DateTime.Now}");
                 }
+                else
+                    Console.WriteLine($"{Sender.Path} Group {createGroup.GroupId} exist.");
             });
+
+            Receive<JoinGroupMessage>(joinGroup =>
+            {
+                if (_members is null)
+                {
+                    Console.WriteLine($"Group {joinGroup.GroupId} not exist.");
+                    return;
+                }
+
+                if (!_members.Contains(joinGroup.Sender))
+                {
+                    _members.Add(joinGroup.Sender);
+                    Console.WriteLine($"{Sender.Path} sent JoinGroupMessage {joinGroup.GroupId} at {DateTime.Now}");
+                }
+                else
+                    Console.WriteLine($"{Sender.Path} Group {joinGroup.GroupId} already has {joinGroup.Sender}");
+            });
+
+            Receive<GroupMessage>(groupMessage =>
+            {
+                if (_members is null)
+                {
+                    Console.WriteLine($"Group {groupMessage.GroupId} not exist.");
+                    return;
+                }
+
+                if (!_members.Contains(groupMessage.Sender))
+                {
+                    Console.WriteLine($"{groupMessage.Sender} no member of group {groupMessage.GroupId}");
+                    return;
+                }
+
+                _groupMessages.Add(groupMessage.MessageId, groupMessage);
+
+                _mediator.Tell(new Publish(groupMessage.GroupId, new UserGroupMessage
+                {
+                    GroupId = groupMessage.GroupId,
+                    UserId = groupMessage.Sender,
+                    Message = groupMessage.Message,
+                    MessageId = groupMessage.MessageId
+                }));
+            });
+
+            Receive<GroupStatusMessage>(message => {
+                Sender.Tell(new GroupStatusResponse
+                {
+                    GroupId = message.GroupId,
+                    Members = _members,
+                    Owner = _owner,
+                    Messages = _groupMessages
+                });
+            });                
         }
     }
 
@@ -101,7 +104,7 @@ namespace SocialNetwork.Api.Actors
             _UserShardRegion = userShardRegion;
             _groupShardRegion = groupShardRegion;
 
-            Receive<IGroupMessage>(message =>
+            Receive<IGroupIdentifier>(message =>
             {
                 switch (message)
                 {
@@ -110,6 +113,11 @@ namespace SocialNetwork.Api.Actors
                         {
                             _groupShardRegion.Forward(message);
                             _UserShardRegion.Forward(new GroupMemberMessage { GroupId = message.GroupId, UserId = message.Sender });
+                            break;
+                        }
+                    case GroupStatusMessage groupStatus:
+                        {
+                            _groupShardRegion.Forward(message);
                             break;
                         }
                     default:
